@@ -1,7 +1,7 @@
 //! Game-specific code for the example game.
 use std::{collections::BTreeMap, rc::Rc};
 
-use crate::{Vec2, renderer::Quad, texture::{SubTexture, Texture}, input::{InputManager, Key}, Color32, collider::{Collider, AABB}};
+use crate::{Vec2, renderer::Quad, texture::{SubTexture, Texture}, input::{InputManager, Key}, Color32, collider::AABB};
 
 /// A [`Tile`] is a single cell in a [`TileMap`].
 pub struct Tile {
@@ -78,7 +78,6 @@ impl Default for Player {
             is_backward: false,
             is_jumping: false,
             sprites: {
-                use std::rc::Rc;
                 let mut sprites = BTreeMap::new();
                 let texture = Rc::new(Texture::default());
 
