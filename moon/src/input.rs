@@ -4,20 +4,47 @@ use std::collections::BTreeSet;
 
 use crate::Vec2;
 
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
 /// A [`Key`] is used to identify the keys on a keyboard.
+#[allow(missing_docs)]
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub enum Key {
-    /// The `Space` key.
     Space,
-    /// The `A` key.
     A,
-    /// The `D` key.
+    B,
+    C,
     D,
-    /// The `S` key.
+    E,
+    F,
+    G,
+    H,
+    I,
+    J,
+    K,
+    L,
+    M,
+    N,
+    O,
+    P,
+    Q,
+    R,
     S,
-    /// The `W` key.
+    T,
+    U,
+    V,
     W,
-    /// An Unknown Key.
+    X,
+    Y,
+    Z,
+    Num0,
+    Num1,
+    Num2,
+    Num3,
+    Num4,
+    Num5,
+    Num6,
+    Num7,
+    Num8,
+    Num9,
     Unknown,
 }
 
@@ -26,9 +53,40 @@ impl From<&str> for Key {
         match key {
             "Space" => Key::Space,
             "a" | "A" => Key::A,
+            "b" | "B" => Key::B,
+            "c" | "C" => Key::C,
             "d" | "D" => Key::D,
+            "e" | "E" => Key::E,
+            "f" | "F" => Key::F,
+            "g" | "G" => Key::G,
+            "h" | "H" => Key::H,
+            "i" | "I" => Key::I,
+            "j" | "J" => Key::J,
+            "k" | "K" => Key::K,
+            "l" | "L" => Key::L,
+            "m" | "M" => Key::M,
+            "n" | "N" => Key::N,
+            "o" | "O" => Key::O,
+            "p" | "P" => Key::P,
+            "q" | "Q" => Key::Q,
+            "r" | "R" => Key::R,
             "s" | "S" => Key::S,
+            "t" | "T" => Key::T,
+            "u" | "U" => Key::U,
+            "v" | "V" => Key::V,
             "w" | "W" => Key::W,
+            "x" | "X" => Key::X,
+            "y" | "Y" => Key::Y,
+            "z" | "Z" => Key::Z,
+            "0" => Key::Num0,
+            "1" => Key::Num1,
+            "2" => Key::Num2,
+            "3" => Key::Num3,
+            "4" => Key::Num4,
+            "5" => Key::Num5,
+            "7" => Key::Num7,
+            "8" => Key::Num8,
+            "9" => Key::Num9,
             _ => Key::Unknown
         }
     }
