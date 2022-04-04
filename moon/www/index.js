@@ -15,10 +15,10 @@ function init() {
     app.init();
 
     canvas.addEventListener("keydown", event => {
-        app.input(event.which, true);
+        app.input(event.key, true);
     });
     canvas.addEventListener("keyup", event => {
-        app.input(event.which, false);
+        app.input(event.key, false);
     });
     canvas.addEventListener("mousemove", event => {
         app.mouse_move(event.clientX, event.clientY);
