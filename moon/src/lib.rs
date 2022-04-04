@@ -144,22 +144,22 @@ impl Application {
 
         renderer.clear([0.5, 0.2, 0.3, 1.0]);
 
-        if self.input.get_key_state(Key::R) {
+        if self.input.consume_key_state(Key::R) {
             renderer.init_components();
         }
-        if self.input.get_key_state(Key::Num1) {
+        if self.input.consume_key_state(Key::Num1) {
             renderer
                 .get_mut_component::<ParticleSystem>("FIRE")
                 .unwrap()
                 .toggle_alive();
         }
-        if self.input.get_key_state(Key::Num2) {
+        if self.input.consume_key_state(Key::Num2) {
             renderer
                 .get_mut_component::<ParticleSystem>("DEFAULT")
                 .unwrap()
                 .toggle_alive();
         }
-        if self.input.get_key_state(Key::Num3) {
+        if self.input.consume_key_state(Key::Num3) {
             renderer
                 .get_mut_component::<ParticleSystem>("SMOKE")
                 .unwrap()

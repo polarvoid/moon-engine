@@ -157,6 +157,14 @@ impl InputManager {
         self.keyboard_states.contains(&key)
     }
 
+    /// Get the state of a key as a [`bool`], consuming it in the process.
+    ///
+    /// Returns true if the key is currently pressed, or false.
+    pub fn consume_key_state(&mut self, key: Key) -> bool {
+        self.keyboard_states.remove(&key)
+    }
+
+
     /// Set the mouse position.
     pub fn set_mouse_position(&mut self, x: f32, y: f32) {
         self.mouse_position.x = x;
