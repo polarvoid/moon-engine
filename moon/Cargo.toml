@@ -1,8 +1,11 @@
 [package]
-name = "moon"
+name = "moon-engine"
 version = "0.1.0"
 authors = ["Alvin Philips <alvinphilips257@gmail.com>"]
+description = "A WebGL2/WASM Game Library written in the Rust programming language."
 edition = "2021"
+license = "MIT"
+repository = "https://github.com/polarvoid/moon-engine"
 
 [lib]
 crate-type = ["cdylib", "rlib"]

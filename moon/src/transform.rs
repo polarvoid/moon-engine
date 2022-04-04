@@ -1,5 +1,7 @@
 //! The [`Transform`] ans [`Transform2D`] structs.
 
+use std::ops::Add;
+
 use crate::Mat4;
 use crate::Vec2;
 use crate::Vec3;
@@ -7,7 +9,7 @@ use crate::Vec3;
 /// A 3D representation of an entity's position, rotation and scale.
 ///
 /// A [`Transform`] contains [`Vec3`]s for Position, ROtation and Scale.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Transform {
     matrix: Mat4,
     /// Position component of the [`Transform`].
@@ -44,12 +46,12 @@ impl Transform {
         }
     }
 
-    /// Get a clone of the [`Matrix4`].
+    /// Get a clone of the [`Mat4`].
     pub fn matrix(&self) -> Mat4 {
         self.matrix
     }
 
-    /// Get the [`Matrix4`] representing the transform as a slice of [`f32`] to use with WebGL.
+    /// Get the [`Mat4`] representing the transform as a slice of [`f32`] to use with WebGL.
     pub fn matrix_slice(&mut self) -> &[f32] {
         self.matrix.as_slice()
     }
@@ -98,6 +100,7 @@ impl Transform {
 /// A 2D counterpart for the [`Transform`].
 ///
 /// A [`Transform2D`] contains Position and Scale [`Vec2`]s and a float for rotation.
+#[derive(Debug, Clone, Copy)]
 pub struct Transform2D {
     /// Position of the [`Transform2D`].
     pub position: Vec2,
@@ -114,5 +117,46 @@ impl Default for Transform2D {
             rotation: 0.0f32,
             scale: Vec2::from_element(1.0),
         }
+    }
+}
+
+impl Add for Transform2D {
+    type Output = Transform2D;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Transform2D {
+            position: self.position + rhs.position,
+            rotation: self.rotation + rhs.rotation,
+            ..rhs
+        }
+    }
+}
+
+impl Transform2D {
+    /// Create a new [`Transform2D`] a given scale
+    pub fn new_with_position(pos_x: f32, pos_y: f32) -> Self {
+        Self {
+            position: Vec2::new(pos_x, pos_y),
+            ..Default::default()
+        }
+    }
+
+    /// Create a new [`Transform2D`] a given scale
+    pub fn new_with_scale(scale_x: f32, scale_y: f32) -> Self {
+        Self {
+            scale: Vec2::new(scale_x, scale_y),
+            ..Default::default()
+        }
+    }
+
+    /// Translate a [`Transform2D`] using `X` and `Y` deltas.
+    pub fn translate(&mut self, delta_x: f32, delta_y: f32) {
+        self.position.x += delta_x;
+        self.position.y += delta_y;
+    }
+
+    /// Get a [`Mat4`] of the [`Transform2D`].
+    pub fn matrix(&self) -> Mat4 {
+        Mat4::new_translation(&Vec3::new(self.position.x, self.position.y, 0.0))
     }
 }

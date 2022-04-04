@@ -94,8 +94,8 @@ impl Camera {
     ///
     /// This works by first converting it into a `-1.0 to 1.0` range, and then multiplying its components by the [`FIXED_WIDTH`] and [`FIXED_HEIGHT`].
     pub fn screen_to_world_coordinates(&self, screen_x: f32, screen_y: f32) -> (f32, f32) {
-        let clipped_x = (screen_x / self.width - 0.5) * 2.0;
-        let clipped_y = (screen_y / self.height - 0.5) * 2.0;
+        let clipped_x = screen_x / self.width - 0.5;
+        let clipped_y = screen_y / self.height - 0.5;
 
         (clipped_x * FIXED_WIDTH, clipped_y * FIXED_HEIGHT)
     }

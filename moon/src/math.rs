@@ -36,6 +36,27 @@ impl Default for Color32 {
     }
 }
 
+impl Add for Color32 {
+    type Output = Color32;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Color32(
+            clamp(self.0 + rhs.0, 0.0, 1.0),
+            clamp(self.1 + rhs.1, 0.0, 1.0),
+            clamp(self.2 + rhs.2, 0.0, 1.0),
+            clamp(self.3 + rhs.3, 0.0, 1.0),
+        )
+    }
+}
+
+impl Mul<f32> for Color32 {
+    type Output = Color32;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        Color32(self.0 * rhs, self.1 * rhs, self.2 * rhs, self.3 * rhs)
+    }
+}
+
 impl Color32 {
     /// Get the Red component of the [`Color32`].
     ///
@@ -85,6 +106,15 @@ impl Color32 {
     pub const fn w(&self) -> f32 {
         self.3
     }
+
+    /// Pure White Color.
+    pub const WHITE: Color32 = Color32(1.0, 1.0, 1.0, 1.0);
+    /// Pure Black Color.
+    pub const BLACK: Color32 = Color32(0.0, 0.0, 0.0, 1.0);
+    /// Magenta Color.
+    pub const MAGENTA: Color32 = Color32(1.0, 0.0, 1.0, 1.0);
+    /// All fields zeroed out.
+    pub const ZEROES: Color32 = Color32(0.0, 0.0, 0.0, 0.0);
 }
 
 impl From<&[f32; 4]> for Color32 {
@@ -141,7 +171,7 @@ impl From<Color8> for Color32 {
 /// let color = Color8::default();
 /// ```
 #[derive(Clone, Copy)]
-pub struct Color8(u8, u8, u8, u8);
+pub struct Color8(pub u8, pub u8, pub u8, pub u8);
 
 impl Default for Color8 {
     fn default() -> Self {
@@ -223,14 +253,86 @@ impl From<Color32> for Color8 {
     }
 }
 
-/// Pure White Color.
-pub const WHITE: Color32 = Color32(1.0, 1.0, 1.0, 1.0);
-/// Pure Black Color.
-pub const BLACK: Color32 = Color32(0.0, 0.0, 0.0, 1.0);
-/// Magenta Color.
-pub const MAGENTA: Color32 = Color32(1.0, 0.0, 1.0, 1.0);
-
 /// A [`Point`] is an alias to Vec2.
 pub type Point = Vec2;
 
+use std::ops::{Add, Mul};
+
 pub use nalgebra::clamp;
+
+/// Trait for generating random values
+pub trait Random {
+    /// Get a random value.
+    fn random() -> Self;
+    /// Get a random value, expanded to another range.
+    fn random_range_max(max: Self) -> Self;
+    /// Get a random value, expanded to another range.
+    fn random_range(min: Self, max: Self) -> Self;
+}
+
+impl Random for f32 {
+    fn random() -> Self {
+        js_sys::Math::random() as f32
+    }
+
+    fn random_range_max(max: Self) -> Self {
+        f32::random() * max
+    }
+
+    fn random_range(min: Self, max: Self) -> Self {
+        f32::random() * (max - min) + min
+    }
+}
+
+impl Random for Vec2 {
+    fn random() -> Self {
+        Vec2::new(f32::random(), f32::random())
+    }
+
+    fn random_range_max(max: Self) -> Self {
+        Vec2::new(f32::random_range_max(max.x), f32::random_range_max(max.y))
+    }
+
+    fn random_range(min: Self, max: Self) -> Self {
+        Vec2::new(
+            f32::random_range(min.x, max.x),
+            f32::random_range(min.y, max.y),
+        )
+    }
+}
+
+impl Random for Color32 {
+    fn random() -> Self {
+        Color32(f32::random(), f32::random(), f32::random(), 1.0)
+    }
+
+    fn random_range_max(max: Self) -> Self {
+        Color32(
+            f32::random_range_max(max.0),
+            f32::random_range_max(max.1),
+            f32::random_range_max(max.2),
+            f32::random_range_max(max.3),
+        )
+    }
+
+    fn random_range(min: Self, max: Self) -> Self {
+        Color32(
+            f32::random_range(min.0, max.0),
+            f32::random_range(min.1, max.1),
+            f32::random_range(min.2, max.2),
+            f32::random_range(min.3, max.3),
+        )
+    }
+}
+
+/// Linearly interpolate between two values.
+pub trait Lerp: Sized + Mul<f32, Output = Self> + Add<Self, Output = Self> {
+    /// Linearly interpolate between two values.
+    fn lerp(min: Self, max: Self, factor: f32) -> Self {
+        min * (1.0 - factor) + max * factor
+    }
+}
+
+impl Lerp for f32 {}
+impl Lerp for Vec2 {}
+impl Lerp for Color32 {}

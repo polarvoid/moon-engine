@@ -1,5 +1,5 @@
-use moon::collider::*;
-use moon::Point;
+use moon_engine::collider::*;
+use moon_engine::Point;
 
 #[test]
 fn point_and_itself() {

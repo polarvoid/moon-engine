@@ -18,6 +18,8 @@ pub struct Texture {
     pub width: u32,
     /// Height of the [`Texture`].
     pub height: u32,
+    /// Slot the [`Texture`] will occupy.
+    pub slot: u32,
 }
 
 impl Default for Texture {
@@ -26,16 +28,19 @@ impl Default for Texture {
             texture: None,
             width: 1,
             height: 1,
+            slot: 0,
         }
     }
 }
 
 impl Bind for Texture {
     fn bind(&self, gl: &GL) {
+        gl.active_texture(GL::TEXTURE0 + self.slot);
         gl.bind_texture(GL::TEXTURE_2D, self.texture.as_ref());
     }
-    fn unbind(&self, _gl: &GL) {
-        _gl.bind_texture(GL::TEXTURE_2D, None);
+    fn unbind(&self, gl: &GL) {
+        gl.active_texture(GL::TEXTURE0 + self.slot);
+        gl.bind_texture(GL::TEXTURE_2D, None);
     }
 }
 
@@ -76,6 +81,7 @@ impl Texture {
             width,
             height,
             texture,
+            ..Default::default()
         }
     }
 
@@ -118,10 +124,12 @@ impl Texture {
         )
         .expect("Failed to generate texture");
         gl.generate_mipmap(GL::TEXTURE_2D);
+
         Self {
             width,
             height,
             texture,
+            ..Default::default()
         }
     }
 
@@ -134,12 +142,12 @@ impl Texture {
 
     /// A fully-white [`Texture`].
     pub fn white(gl: &GL) -> Self {
-        Self::colored(gl, crate::WHITE)
+        Self::colored(gl, Color32::WHITE)
     }
 
     /// A black and white checkerboard [`Texture`].
     pub fn checkerboard(gl: &GL) -> Self {
-        Self::checkerboard_colored(gl, crate::WHITE, crate::BLACK)
+        Self::checkerboard_colored(gl, Color32::WHITE, Color32::BLACK)
     }
 
     /// A checkerboard [`Texture`] with two [`Color32`]s.
@@ -241,7 +249,7 @@ impl Bind for SubTexture {
             texture.bind(gl);
         }
     }
-    fn unbind(&self, _gl: &GL) {
-        _gl.bind_texture(GL::TEXTURE_2D, None);
+    fn unbind(&self, gl: &GL) {
+        gl.bind_texture(GL::TEXTURE_2D, None);
     }
 }

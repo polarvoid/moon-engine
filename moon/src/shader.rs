@@ -50,8 +50,8 @@ impl gl::Bind for Shader {
     fn bind(&self, gl: &GL) {
         gl.use_program(self.program.as_ref());
     }
-    fn unbind(&self, _gl: &GL) {
-        _gl.use_program(None);
+    fn unbind(&self, gl: &GL) {
+        gl.use_program(None);
     }
 }
 

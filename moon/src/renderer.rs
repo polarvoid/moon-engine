@@ -1,10 +1,12 @@
 //! The [`Renderer`] annd [`Quad`] structs. Used for rendering.
 
 use std::collections::BTreeMap;
+use std::fmt;
 use std::rc::Rc;
 use web_sys::WebGlUniformLocation;
 
-use crate::{gl, mesh, texture};
+use crate::component::Component;
+use crate::{gl, mesh, texture, Color32};
 use crate::{Camera, Shader, Transform, GL};
 
 use gl::Bind;
@@ -15,49 +17,6 @@ use texture::{SubTexture, Texture};
 pub const MAX_BATCH_QUADS: i32 = 1000;
 const MAX_BATCH_VERTICES: i32 = MAX_BATCH_QUADS * 4;
 const MAX_BATCH_INDICES: i32 = MAX_BATCH_QUADS * 6;
-
-/// The [`Renderer`] is responsible for drawing on the screen. It handles the [`Camera`] and [`Shader`]s.
-#[derive(Debug)]
-pub struct Renderer {
-    /// The [`WebGl2RenderingContext`](web_sys::WebGl2RenderingContext) used by the [`Renderer`].
-    pub gl: GL,
-    /// The [`Shader`] used by the [`Renderer`].
-    pub program: Shader,
-    /// The [`Camera`] used by the [`Renderer`].
-    pub camera: Camera,
-    batches: Vec<Mesh>,
-    textures: BTreeMap<&'static str, Rc<Texture>>,
-    u_time: Option<WebGlUniformLocation>,
-    u_color: Option<WebGlUniformLocation>,
-    u_model_matrix: Option<WebGlUniformLocation>,
-    u_view_matrix: Option<WebGlUniformLocation>,
-    u_projection_matrix: Option<WebGlUniformLocation>,
-}
-
-impl Default for Renderer {
-    fn default() -> Self {
-        let gl = gl::get_context();
-        let program = Shader::new(&gl);
-        Self {
-            camera: Camera::default(),
-            batches: Vec::new(),
-            u_time: program.get_uniform_location(&gl, "uTime"),
-            u_color: program.get_uniform_location(&gl, "uColor"),
-            u_model_matrix: program.get_uniform_location(&gl, "uModel"),
-            u_view_matrix: program.get_uniform_location(&gl, "uView"),
-            u_projection_matrix: program.get_uniform_location(&gl, "uProj"),
-            program,
-            textures: {
-                let mut textues = BTreeMap::<&str, Rc<Texture>>::new();
-                textues.insert("WHITE", Rc::new(Texture::white(&gl)));
-                textues.insert("MAGENTA", Rc::new(Texture::colored(&gl, crate::MAGENTA)));
-                textues.insert("CHECKERBOARD", Rc::new(Texture::checkerboard(&gl)));
-                textues
-            },
-            gl,
-        }
-    }
-}
 
 /// A [`Quad`] is a simple mesh definition with four [`Vertices`](Vertex).
 #[derive(Debug)]
@@ -91,32 +50,92 @@ impl Default for Quad {
 }
 
 impl Quad {
-    /// Create a new [`Quad`] from a given position and size.
-    pub fn new_from_position_and_size(pos_x: f32, pos_y: f32, size_x: f32, size_y: f32) -> Self {
+    /// Create a new [`Quad`] from a given position, rotation, size and color.
+    pub fn new_from_position_and_rotation_and_size_and_color(
+        pos_x: f32,
+        pos_y: f32,
+        rotation: f32,
+        size_x: f32,
+        size_y: f32,
+        color: Color32,
+    ) -> Self {
         let size_x = size_x / 2.0;
         let size_y = size_y / 2.0;
+        let color = <[f32; 4]>::from(color);
+        let (sin_theta, cos_theta) = rotation.sin_cos();
+        let mut points = [
+            [-size_x, -size_y],
+            [-size_x, size_y],
+            [size_x, size_y],
+            [size_x, -size_y],
+        ];
+        for point in points.iter_mut() {
+            let (x, y) = (point[0], point[1]);
+            point[0] = pos_x + x * cos_theta - y * sin_theta;
+            point[1] = pos_y + x * sin_theta + y * cos_theta;
+        }
+        Self([
+            Vertex {
+                position: points[0],
+                uv: [0.0, 0.0],
+                color,
+            },
+            Vertex {
+                position: points[1],
+                uv: [0.0, 1.0],
+                color,
+            },
+            Vertex {
+                position: points[2],
+                uv: [1.0, 1.0],
+                color,
+            },
+            Vertex {
+                position: points[3],
+                uv: [1.0, 0.0],
+                color,
+            },
+        ])
+    }
+
+    /// Create a new [`Quad`] from a given position, size and color.
+    pub fn new_from_position_and_size_and_color(
+        pos_x: f32,
+        pos_y: f32,
+        size_x: f32,
+        size_y: f32,
+        color: Color32,
+    ) -> Self {
+        let size_x = size_x / 2.0;
+        let size_y = size_y / 2.0;
+        let color = <[f32; 4]>::from(color);
         Self([
             Vertex {
                 position: [pos_x - size_x, pos_y + size_y],
                 uv: [0.0, 0.0],
-                ..Default::default()
+                color,
             },
             Vertex {
                 position: [pos_x - size_x, pos_y - size_y],
                 uv: [0.0, 1.0],
-                ..Default::default()
+                color,
             },
             Vertex {
                 position: [pos_x + size_x, pos_y - size_y],
                 uv: [1.0, 1.0],
-                ..Default::default()
+                color,
             },
             Vertex {
                 position: [pos_x + size_x, pos_y + size_y],
                 uv: [1.0, 0.0],
-                ..Default::default()
+                color,
             },
         ])
+    }
+
+    /// Create a new [`Quad`] from a given position and size.
+    pub fn new_from_position_and_size(pos_x: f32, pos_y: f32, size_x: f32, size_y: f32) -> Self {
+        Self::new_from_position_and_size_and_color(pos_x, pos_y, size_x, size_y, Color32::WHITE)
     }
 
     /// Create a new [`Quad`] from a given position, size, and a reference to a [`SubTexture`].
@@ -178,6 +197,68 @@ impl Quad {
     /// Get the [`Vertices`](Vertex) of the [`Quad`] as a [`Vec`].
     pub fn get_vertices(&self) -> Vec<Vertex> {
         self.0.to_vec()
+    }
+}
+
+/// The [`Renderer`] is responsible for drawing on the screen. It handles the [`Camera`] and [`Shader`]s.
+pub struct Renderer {
+    /// The [`WebGl2RenderingContext`](web_sys::WebGl2RenderingContext) used by the [`Renderer`].
+    pub gl: GL,
+    /// The [`Shader`] used by the [`Renderer`].
+    pub program: Shader,
+    /// The [`Camera`] used by the [`Renderer`].
+    pub camera: Camera,
+    batches: Vec<Mesh>,
+    /// [`Components`](Component) that can be added to the [`Renderer`].
+    pub components: BTreeMap<&'static str, Box<dyn Component>>,
+    textures: BTreeMap<&'static str, Rc<Texture>>,
+    u_time: Option<WebGlUniformLocation>,
+    u_color: Option<WebGlUniformLocation>,
+    u_model_matrix: Option<WebGlUniformLocation>,
+    u_view_matrix: Option<WebGlUniformLocation>,
+    u_projection_matrix: Option<WebGlUniformLocation>,
+}
+
+impl Default for Renderer {
+    fn default() -> Self {
+        let gl = gl::get_context();
+        let program = Shader::new(&gl);
+        Self {
+            camera: Camera::default(),
+            batches: Vec::new(),
+            components: BTreeMap::new(),
+            u_time: program.get_uniform_location(&gl, "uTime"),
+            u_color: program.get_uniform_location(&gl, "uColor"),
+            u_model_matrix: program.get_uniform_location(&gl, "uModel"),
+            u_view_matrix: program.get_uniform_location(&gl, "uView"),
+            u_projection_matrix: program.get_uniform_location(&gl, "uProj"),
+            program,
+            textures: {
+                let mut textues = BTreeMap::<&str, Rc<Texture>>::new();
+                textues.insert("WHITE", Rc::new(Texture::white(&gl)));
+                textues.insert("MAGENTA", Rc::new(Texture::colored(&gl, Color32::MAGENTA)));
+                textues.insert("CHECKERBOARD", Rc::new(Texture::checkerboard(&gl)));
+                textues
+            },
+            gl,
+        }
+    }
+}
+
+impl fmt::Debug for Renderer {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Renderer")
+            .field("gl", &self.gl)
+            .field("program", &self.program)
+            .field("camera", &self.camera)
+            .field("batches", &self.batches)
+            .field("textures", &self.textures)
+            .field("u_time", &self.u_time)
+            .field("u_color", &self.u_color)
+            .field("u_model_matrix", &self.u_model_matrix)
+            .field("u_view_matrix", &self.u_view_matrix)
+            .field("u_projection_matrix", &self.u_projection_matrix)
+            .finish()
     }
 }
 
@@ -304,7 +385,7 @@ impl Renderer {
     }
 
     /// Add a [`Quad`] to the batching queue.
-    pub fn add_quad(&mut self, quad: Quad) {
+    pub fn add_quad(&mut self, quad: &Quad) {
         let gl = &self.gl;
 
         // Get last batch. This should never be empty becase begin_draw should have been called before.
@@ -313,7 +394,11 @@ impl Renderer {
             .last_mut()
             .expect("Batch list empty. Check if begin_draw was called before.");
         if batch.vertices.len() + 4 > MAX_BATCH_VERTICES as usize {
-            let mesh = Mesh::new(gl, Vec::new(), Vec::new());
+            let mesh = Mesh::new(
+                gl,
+                Vec::with_capacity(MAX_BATCH_VERTICES as usize),
+                Vec::with_capacity(MAX_BATCH_INDICES as usize),
+            );
             self.batches.push(mesh);
 
             batch = self.batches.last_mut().unwrap();
@@ -383,5 +468,77 @@ impl Renderer {
         let gl = &self.gl;
         gl.clear_color(color[0], color[1], color[2], color[3]);
         gl.clear(GL::COLOR_BUFFER_BIT);
+    }
+
+    /// Add a [`Component`] to the [`Renderer`].
+    pub fn add_component(&mut self, name: &'static str, component: Box<dyn Component>) {
+        self.components.insert(name, component);
+    }
+
+    /// (Re)Initialize the [`Components`](Component) of the [`Renderer`].
+    pub fn init_components(&mut self) {
+        for component in self.components.values_mut() {
+            component.init()
+        }
+    }
+
+    /// Update the [`Components`](Component) of the [`Renderer`].
+    pub fn update_components(&mut self, delta_time: f32) {
+        for component in self.components.values_mut() {
+            component.update(delta_time)
+        }
+    }
+
+    /// Get a [`Components`](Component) using a key, and ty to cast it to a given type.
+    pub fn get_component<T: 'static + Component>(&self, key: &'static str) -> Result<&T, String> {
+        self.components
+            .get(key)
+            .unwrap()
+            .as_any()
+            .downcast_ref::<T>()
+            .ok_or_else(|| String::from("Could not cast to type."))
+    }
+
+    /// Get a mutable [`Components`](Component) using a key, and ty to cast it to a given type.
+    pub fn get_mut_component<T: 'static + Component>(
+        &mut self,
+        key: &'static str,
+    ) -> Result<&mut T, String> {
+        self.components
+            .get_mut(key)
+            .unwrap()
+            .as_mut_any()
+            .downcast_mut::<T>()
+            .ok_or_else(|| String::from("Could not cast to type."))
+    }
+
+    /// Draw the [`Components`](Component) of the [`Renderer`].
+    pub fn draw_components(&mut self) {
+        let gl = &self.gl;
+        let mut layers: Vec<Vec<Quad>> = self
+            .components
+            .values()
+            .filter_map(|component| component.get_quads())
+            .collect();
+        for layer in layers.iter_mut() {
+            let mut mesh = Mesh::new(
+                gl,
+                Vec::with_capacity(layer.len() * 4),
+                Vec::with_capacity(layer.len() * 6),
+            );
+            for (id, quad) in layer.iter_mut().enumerate() {
+                let last: u32 = id as u32 * 4;
+                mesh.vertices.append(&mut quad.get_vertices());
+                let mut indices = vec![last, last + 2, last + 1, last, last + 3, last + 2];
+                mesh.indices.append(&mut indices);
+            }
+            mesh.setup(gl);
+            gl.draw_elements_with_i32(
+                GL::TRIANGLES,
+                mesh.indices.len() as i32,
+                GL::UNSIGNED_INT,
+                0,
+            );
+        }
     }
 }

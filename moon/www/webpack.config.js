@@ -7,7 +7,17 @@ module.exports = {
     path: path.resolve(__dirname, "dist"),
     filename: "bootstrap.js",
   },
-  experiments: { asyncWebAssembly: true },
+  module: {
+    rules: [
+      {
+        test: /\.wasm$/,
+        type: 'webassembly/sync',
+      }
+    ]
+  },
+  experiments: {
+    syncWebAssembly: true
+  },
   mode: "development",
   plugins: [
     new CopyPlugin({

@@ -25,7 +25,6 @@ function init() {
     }, false);
 
     app.resize(window.innerWidth, window.innerHeight);
-    let startTime = performance.now();
     function render() {
         window.requestAnimationFrame(render);
         let currentTime = performance.now();
